@@ -259,7 +259,7 @@ Understanding Ownership
     
     println!("{s2}");
     
-    let v = calculate_len(&s2);
+    let v = calculate_len(&s2); // reference to the s2
     
     println!("The size of s2: {v}");
     
@@ -287,7 +287,330 @@ fn calculate_len(s: &String)->usize{
 
 /*
 References and Borrowing
- */
-fn main(){
+// fn change(some_string: &String){ // throws an error
+    fn change(some_string: &mut String){
+        some_string.push_str(", world");
+        println!("{some_string}");
+    }
+    fn main(){
+        // let s = String::from("Hello");
+        
+        // change(&s); // throws an error because the function is borrowing s without permission to edit
+        let mut s2 = String::from("hello");
+        
+        change(&mut s2);
+    println!("{s2}"); // prints the same value from the change function because it mutates the original
 
+    // RULE a value cannot be borrowed as mutable more than once at a time
+    // prevents data race
 }
+*/
+
+/*
+The Slice Type
+- lets you refer to a contiguous sequence of elements in a collection rather than the whole collection
+fn first_word(s: &String)->&str{
+    let bytes = s.as_bytes();
+    
+    for (i, &item) in bytes.iter().enumerate(){
+        if item == b' '{
+            return &s[..i];
+        }
+    }
+    
+    &s[..]
+}
+
+fn first_word_literl(s: &str)->&str{
+    let bytes = s.as_bytes();
+    
+    for (i, &item) in bytes.iter().enumerate(){
+        if item == b' '{
+            return &s[..i];
+        }
+    }
+    
+    &s[..]
+}
+fn main(){
+    // string slices
+    let s = String::from("hello, world");
+    
+    // let hello = &s[0..5]; // same as &s[..5]; 
+    // let world = &s[6..11]; // same as &s[6..]; can drop both values for &s[..];
+    
+    let word = first_word(&s);
+    
+    println!("{word}");
+    
+    // string literal as slices
+}
+*/
+
+/*
+========== USING STRUCTS TO STRUCTURE RELATED DATA ==========
+// define a struct
+struct User{
+    active:bool,
+    username:String,
+    email: String,
+    sign_in_count: u64,
+}  
+
+fn build_user(email:String, username:String)->User{
+    // User { active: true, username: username, email: email, sign_in_count: 1 }
+    // shorthand notation
+    User { active: true, username, email, sign_in_count: 1 }
+}
+
+// using tuple structs without named fields to create different types
+struct Color(i32,i32,i32);
+struct Point(i32,i32,i32);
+
+// unit structs
+struct AlwaysEqual;
+
+fn main(){
+    
+    // create an instance
+    let mut user1 = User{active:true, username: String::from("some_user"), email: String::from("some@email.com"), sign_in_count: 1}; // when mutable, all properties are mutable
+    
+    user1.email = String::from("another@email.com");
+    
+    // create another instance from other instances
+    let user2 = User{
+        email:String::from("another@email.com"),
+        ..user1
+    };
+    
+    // user1 can no longer be used here because the username String was moved to user2
+    // if user2 had a new String for username and email then user1 would still be usable
+    
+    // tuples structs
+    let black = Color(0,0,0);
+    let origin = Point(0,0,0);
+
+    // unit struct
+    let subject = AlwaysEqual;
+}
+*/
+
+/*
+Example Program using structs
+#[derive(Debug)]
+struct Rectangle{
+    width: u32,
+    height:u32,
+}
+
+fn area(rectangle:&Rectangle)->u32{
+    rectangle.width * rectangle.height
+}
+
+fn main(){
+    let rect = Rectangle{
+        width: 30,
+        height: 50,
+    };
+    
+    println!(
+        "The area of the rectanlge is {} square pixels",
+        area(&rect)
+    );
+    
+    // to print a struct replace {} with {:?} or {:#?}
+    // and add #[derive(Debug)] to rectangle
+    
+    println!("rect is {:?}", rect);
+}
+*/
+
+/*
+Method Syntax
+
+// define struct
+#[derive(Debug)]
+struct Rectangle{
+    width: u32,
+    height: u32,
+}
+
+// call this with methods inside to associate with the type
+// types can have multiple impl blocks
+impl Rectangle{
+    
+    // all functions in impl are called associated functions
+    fn area(&self) -> u32{
+        self.width * self.height
+    }
+    
+    // more params
+    fn can_hold(&self, other: &Rectangle)->bool{
+        self.width > other.width && self.height > other.height
+    }
+    
+    // none method associated function
+    fn square(size: u32)->Self{
+        Self { width: size, height: size }
+    }
+}
+
+fn main(){
+    let rect1 = Rectangle{
+        width: 30,
+        height: 50,
+    };
+    
+    let rect2 = Rectangle{
+        width:20,
+        height: 40,
+    };
+
+    // calling an associated method
+    let sq = Rectangle::square(3);
+    
+    println!(
+        "The area of rect1 is {}",
+        rect1.area()
+    );
+    
+    println!(
+        "Can rect1 hold rect2? {}",
+        rect1.can_hold(&rect2)
+    );
+}
+*/
+
+
+/*
+========== ENUMS AND PATTERN MATCHING ==========
+
+Defining an Enum
+
+able to create enum methods with impl
+
+enum IpAddrKind{
+    V4,
+    V6,
+}
+
+// function using enum type
+// fn route(ip_kind: IpAddrKind){}
+
+// struct IpAddr{
+    //     kind: IpAddrKind,
+    //     address: String,
+    // }
+    
+    // or
+    
+    enum IpAddr{
+        // defining associated value
+        V4(String),
+        V6(String),
+    }
+    
+    fn main(){
+        // user enums with
+        // let four = IpAddrKind::V4;
+        // let six = IpAddrKind::V6;
+        
+        // let home = IpAddr{
+            //     kind: IpAddrKind::V4,
+            //     address: String::from("127.0.0.1"),
+            // };
+            
+            // let loopback = IpAddr{
+                //     kind: IpAddrKind::V6,
+                //     address: String::from("::1"),
+    // };
+    
+    // or
+    
+    let home = IpAddr::V4(String::from("127.0.0.1"));
+    let loopback = IpAddr::V6(String::from("::1"));
+    
+    // OPTION Enum
+    // replacement of null
+    
+    /*
+    Defined as 
+    enum Option<T>{
+        None,
+        Some(T),
+    }
+    
+    T is an generic type of parameter
+     */
+
+    let some_number = Some(5); // need to convert Option<T> to T before doing T operations
+    let some_char = Some('c');
+    
+    let absent_number: Option<i32> = None; // need to declare type for None
+}
+
+// MATCH CONTROL FLOW
+
+#[derive(Debug)]
+enum UsState{
+    Alabama,
+    Alaska,
+    // so on
+}
+
+enum Coin{
+    Penny,
+    Nickel,
+    Dime,
+    Quarter(UsState)
+}
+
+fn value_in_cnets(coin: Coin)-> u8{
+    // match can return functions
+    match coin{
+        Coin::Penny => 1,
+        Coin::Nickel => 5,
+        Coin::Dime => 10,
+        Coin::Quarter(state)=> {
+            println!("State quarter from {:?}", state);
+            25
+        }
+    }
+}
+
+fn main(){
+    value_in_cnets(Coin::Quarter(UsState::Alabama));
+}
+
+
+// MATCHING WITH OPTION<T>
+fn plus_one(x: Option<i32>) -> Option<i32>{
+    match x{
+        None=> None,  // must include None match or else run create a compile error
+        Some(i)=> Some(i+1),
+    }
+}
+
+// CONCISE CONTROL FLOW WITH IF LET
+fn main(){
+    let config_max = Some(3u8);
+    
+    match config_max{
+        Some(max)=> println!("The maximum is configured to be {}", max),
+        _ => (), // way of returning ignoring None value
+    }
+    
+    // or
+    
+    if let Some(max) = config_max{
+        println!("The maxiumu is configured to be {}", max);
+    } else{
+        // else is usable if patterns don't match
+    }
+}
+*/
+
+/*
+CHAPTER 7
+MANAGING GROWING PROJECTS WITH PACKAGES, CRATES, AND MODULES
+*/
